@@ -5,7 +5,7 @@ def bostonBaseModel():
     return XGBRegressor()
 
 
-def fernchBaseModel():
+def frenchBaseModel():
     """ return a base model used for the french motor dataset """
     return XGBRegressor(eval_metric='poisson-nloglik',
                         objective="count:poisson", 
