@@ -12,3 +12,9 @@
     │    ├── housing.csv            # (optional) Boston housing prices dataset.
     │
     └─ 
+
+## Install
+(from the project directory)
+```shell
+conda env create -f environment.yml
+```
