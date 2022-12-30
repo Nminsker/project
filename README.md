@@ -18,3 +18,11 @@
 ```shell
 conda env create -f environment.yml
 ```
+
+if that doesn't work, use commends as follows:
+```shell
+conda create --name mlops-project python=3.8.15 matplotlib=3.1.1
+conda activate mlops-project
+conda install -c conda-forge xgboost=1.5.0
+pip install macest
+```
