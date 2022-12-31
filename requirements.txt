@@ -1,0 +1,11 @@
+ipdb
+numpy
+scipy
+tqdm
+pathlib
+pandas
+matplotlib
+colorama
+scikit-learn
+xgboost
+plotly
