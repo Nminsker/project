@@ -23,7 +23,8 @@ def loadFrenchMotorData():
     """ Returns a tuple of DataFrames for `French Motor Claims` dataset: (featuresDf, targetArray).
         the targetArray is the value of claimNb/Exposure for each sample. """
     df = pd.read_csv("datasets/freMTPL2freq.csv")
-    return df, df["ClaimNb"]/df["Exposure"]
+    df['freq'] = df["ClaimNb"]/df["Exposure"]
+    return df, df["ClaimNb"]
 
 
 def loadBostonData():
