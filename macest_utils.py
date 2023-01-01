@@ -38,6 +38,9 @@ class MacestModel:
         data = self.X_test if data is None else data
         return self.macest_model.sample_prediction(data, nsamples)
 
+    def predict(self, data):
+        return self.model.predict(data)
+
     # Still needs to be checked
     def create_plots(self):
         current_dir = os.getcwd()
