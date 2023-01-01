@@ -4,15 +4,15 @@ from sklearn.model_selection import train_test_split
 from macest.regression import models as reg_mod
 from macest.regression import plots as reg_plot
 from typing import Union
-import pathlib
 import os
 
 
-class MacestUtils:
+class MacestModel:
     def __init__(self, model, X, y):
         self.model = model
         self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test, self.y_pp_train, self.y_conf_train, self.y_cal, \
             self.y_test = self.split_data(X, y)
+        self.calibrate_macest()
 
     def split_data(self, X, y):
         X_pp_train, X_conf_train, y_pp_train, y_conf_train = train_test_split(X, y, test_size=0.66, random_state=10)
@@ -51,10 +51,9 @@ class MacestUtils:
         # reg_plot.plot_pred_with_conf(self.macest_model, plot_data, plot_true, save=True,
         #                              save_dir=os.path.join(plots_dir, 'plot2'))
         reg_plot.plot_predicted_vs_true(self.model, self.macest_model, plot_data, plot_true, save=True,
-                                        save_dir=os.path.join(plots_dir, 'plot3'), x_limits=(-40,40), y_limits=(-40,40))
+                                        save_dir=os.path.join(plots_dir, 'plot3'))
         reg_plot.plot_true_vs_predicted(self.model, self.macest_model, plot_data, plot_true, save=True,
-                                        save_dir=os.path.join(plots_dir, 'plot4'), x_limits=(-40, 40),
-                                        y_limits=(-40, 40))
+                                        save_dir=os.path.join(plots_dir, 'plot4'))
 
 
 
