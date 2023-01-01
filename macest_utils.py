@@ -27,8 +27,11 @@ class MacestModel:
         self.model.fit(self.X_pp_train, self.y_pp_train)
         model_preds = self.model.predict(self.X_conf_train)
         test_error = np.array(abs(model_preds - self.y_conf_train))
-        self.macest_model = reg_mod.ModelWithPredictionInterval(self.model, self.X_conf_train, test_error, dist_func="error_weighted_poly")
-        self.macest_model.fit(self.X_cal, self.y_cal)
+        search_params = reg_mod.HnswGraphArgs(query_kwargs={'ef': 1500})
+        self.macest_model = reg_mod.ModelWithPredictionInterval(self.model, self.X_conf_train, test_error,
+                                                                search_method_args=search_params,
+                                                                dist_func="error_weighted_poly")
+        self.macest_model.fit(self.X_cal, self.y_cal, param_range=reg_mod.SearchBounds(k_bounds=(2, 20)))
 
     def predict_with_interval(self, data=None, conf_level: Union[np.ndarray, int, float] = 90, ):
         data = self.X_test if data is None else data
