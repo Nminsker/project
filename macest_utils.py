@@ -4,15 +4,15 @@ from sklearn.model_selection import train_test_split
 from macest.regression import models as reg_mod
 from macest.regression import plots as reg_plot
 from typing import Union
-import pathlib
 import os
 
 
-class MacestUtils:
+class MacestModel:
     def __init__(self, model, X, y):
         self.model = model
         self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test, self.y_pp_train, self.y_conf_train, self.y_cal, \
             self.y_test = self.split_data(X, y)
+        self.calibrate_macest()
 
     def split_data(self, X, y):
         X_pp_train, X_conf_train, y_pp_train, y_conf_train = train_test_split(X, y, test_size=0.66, random_state=10)
