@@ -51,10 +51,9 @@ class MacestModel:
         # reg_plot.plot_pred_with_conf(self.macest_model, plot_data, plot_true, save=True,
         #                              save_dir=os.path.join(plots_dir, 'plot2'))
         reg_plot.plot_predicted_vs_true(self.model, self.macest_model, plot_data, plot_true, save=True,
-                                        save_dir=os.path.join(plots_dir, 'plot3'), x_limits=(-40,40), y_limits=(-40,40))
+                                        save_dir=os.path.join(plots_dir, 'plot3'))
         reg_plot.plot_true_vs_predicted(self.model, self.macest_model, plot_data, plot_true, save=True,
-                                        save_dir=os.path.join(plots_dir, 'plot4'), x_limits=(-40, 40),
-                                        y_limits=(-40, 40))
+                                        save_dir=os.path.join(plots_dir, 'plot4'))
 
 
 
