@@ -2,36 +2,63 @@ import numpy as np
 from ipdb import set_trace
 import plotly.express as px
 import scipy.stats as stats
+import matplotlib
+from sklearn import metrics
+matplotlib.use("webagg")
+matplotlib.rcParams["webagg.address"] = "0.0.0.0"
+import matplotlib.pyplot as plt
 
 
-def search(data):
+def get_mse(preds, labels):
+    return metrics.mean_squared_error(labels, preds)
+
+
+def search(data, labels, model):
 
     # 1. Get percents to iterate over
     start, end, increment = 0.5, 0.95, 0.05
     percents = np.arange(start, end, increment)[::-1]
     
     # 2. Create prior vars
-    prior_indices = {} 
-    prior_acc = None
-    prior_p = None
-    
-    for p in percents:
+    prior_indices, prior_mse, prior_p = {}, None, None 
+    out = {}
 
-        # run HDP and get indices of data in percent
-        *_, indices = hpd_grid(data, percent=p)
+    preds = model.predict(data)
+    mse_on_full_test_data = get_mse(preds, labels)
 
-        # Calculate accuracy
-        acc = get_accuracy(indices)
-        
-        # Save if accuracy increases by > 0.01
-        if prior_acc is not None and acc - prior_acc > 0.01:
-            out[f'{p}-{prior_p}'] =\
-                    (prior_indices - set(indices), acc - prior_acc)
-        
-        # Reset
-        prior_indices = set(indices)
-        prior_acc = acc
-        prior_p = p
+    for feature in data.columns:
+
+        for p in percents:
+
+            # run HDP and get indices of data in percent
+            *_, indices = hpd_grid(data[feature], percent=p)
+
+            # Calculate mse just for the chosen indices
+            if indices.size > 0:
+
+                sliced_data = data.iloc[indices]
+                sliced_labels = labels.iloc[indices]
+                preds_on_sliced_data = model.predict(sliced_data)
+                mse = get_mse(preds_on_sliced_data, sliced_labels)
+            
+                # Save if mse increases by 0.1
+                if prior_mse is not None:
+
+                    new_change = 100 * (mse - prior_mse) / prior_mse
+
+                    if new_change > 10 and mse > mse_on_full_test_data:
+                        print(mse)
+                        print(f'(max, min) values of {feature} in full data:' 
+                              f'({data[feature].max(), data[feature].min()})')
+                        print(f'(max, min) values of {feature} in sliced data:'
+                              f'({sliced_data[feature].max(), sliced_data[feature].min()})')
+                        out[f'{p}-{prior_p}'] =\
+                            (prior_indices - set(indices), mse - prior_mse)
+                
+                # Reset
+                prior_indices = set(indices)
+                prior_mse = mse
+                prior_p = p
 
 
 def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
@@ -68,12 +95,8 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
     # data points that create a density plot when histogramed
     sample = np.asarray(sample)
     sample = sample[~np.isnan(sample)]
-    if show_plot: px.histogram(
-            sample, title='Histogram of Bi-Modal Data', 
-            template='simple_white', 
-            color_discrete_sequence=['#177BCD']).show()
-
     # get upper and lower bounds on search space
+
     l = np.min(sample)
     u = np.max(sample)
 
@@ -84,13 +107,15 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
     density = stats.gaussian_kde(sample)
     y = density.evaluate(x)
 
+    
     if show_plot: 
-        px.scatter(
-            x=x, 
-            y=y, 
-            title='Density Estimate of Bi-Modal Data', 
-            template='simple_white'
-            ).update_traces(marker=dict(color='#177BCD')).show()
+
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+
+        ax1.plot(sample[:500])
+        ax2.scatter(x=x, y=y) 
+
+        plt.show()
 
     # sort by size of y (density estimate), descending 
     xy_zipped = zip(x, y/np.sum(y))
@@ -158,7 +183,6 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
          modes.append(round(x_hpd[np.argmax(y_hpd)], roundto)) 
          # store x-value where density is highest in range
 
-    set_trace()
     indices = [item for sublist in indices for item in sublist]
 
     return hpd, x, y, modes, y_cutoff, np.array(indices)
