@@ -12,9 +12,9 @@ class MacestModel:
 
         self.model = model
 
-        self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test,\
-            self.y_pp_train, self.y_conf_train, self.y_cal, self.y_test =\
-        self.split_data(X, y)
+        self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test,
+        self.y_pp_train, self.y_conf_train, self.y_cal, self.y_test =\
+            self.split_data(X, y)
 
         self.calibrate_macest()
 
@@ -23,16 +23,16 @@ class MacestModel:
         X_pp_train, X_conf_train, y_pp_train, y_conf_train =\
                 train_test_split(X, y, test_size=0.66, random_state=10)
 
-        X_conf_train, X_cal, y_conf_train, y_cal = \
+        X_conf_train, X_cal, y_conf_train, y_cal =\
                 train_test_split(X_conf_train, 
                                  y_conf_train,
                                  test_size=0.5, 
                                  random_state=42)
 
-        X_cal, X_test, y_cal, y_test, =\ 
+        X_cal, X_test, y_cal, y_test =\
             train_test_split(X_cal, y_cal, test_size=0.5, random_state=42)
 
-        [X_pp_train, X_conf_train, X_cal, X_test] = \
+        [X_pp_train, X_conf_train, X_cal, X_test] =\
                 map(convert_to_np_array, 
                     [X_pp_train, X_conf_train, X_cal, X_test])
 
@@ -41,6 +41,7 @@ class MacestModel:
 
 
     def calibrate_macest(self):
+
         self.model.fit(self.X_pp_train, self.y_pp_train)
         model_preds = self.model.predict(self.X_conf_train)
         test_error = np.array(abs(model_preds - self.y_conf_train))
@@ -84,9 +85,9 @@ class MacestModel:
         (test_size, *z) = self.X_test.shape
         test_size_condition = test_size <= 10**4
 
-        plot_data = \
+        plot_data =\
                 self.X_test if test_size_condition else self.X_test[0:10**3]
-        plot_true = \
+        plot_true =\
                 self.y_test if test_size_condition else self.y_test[0:10**3]
 
         reg_plot.plot_calibration(

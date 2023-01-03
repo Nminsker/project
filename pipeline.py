@@ -3,6 +3,7 @@ from sklearn import metrics
 import numpy as np
 import datasets_utils
 import base_models
+import macest_utils
 from hpd import search
 from ipdb import set_trace
 from numpy import set_printoptions
