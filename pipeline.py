@@ -3,7 +3,7 @@ from sklearn import metrics
 import numpy as np
 import datasets_utils
 import base_models
-import macest_utils
+from macest_utils import MacestModel
 from hpd import search
 from ipdb import set_trace
 from numpy import set_printoptions
@@ -95,14 +95,13 @@ class Pipeline:
         ## run HPD on data to find data slices that our model perform badly on
         test_data.reset_index(inplace=True)
         test_data.drop('index', axis=1, inplace=True)
-
         test_labels = test_labels.reset_index()
         test_labels.drop('index', axis=1, inplace=True)
-
         data_slices = search(test_data, test_labels, model)
 
         ## wrap the model with interval model
-        #TODO model = 'replace this with something real'
+        model = MacestModel(model, train_data, train_labels)  
+
 
         return model
 
