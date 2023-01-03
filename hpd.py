@@ -51,14 +51,14 @@ def search(data, labels, model):
                               f'({data[feature].max(), data[feature].min()})')
                         print(f'(max, min) values of {feature} in sliced data:'
                               f'({sliced_data[feature].max(), sliced_data[feature].min()})')
-                        out[f'{p}-{prior_p}'] =\
+                        out[f'{feature}-{p}-{prior_p}'] =\
                             (prior_indices - set(indices), mse - prior_mse)
                 
                 # Reset
                 prior_indices = set(indices)
                 prior_mse = mse
                 prior_p = p
-
+      
 
 def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
 
