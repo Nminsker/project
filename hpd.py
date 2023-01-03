@@ -1,7 +1,7 @@
 import numpy as np
 from ipdb import set_trace
 import plotly.express as px
-import scipy.stats.kde as kde
+import scipy.stats as stats
 
 
 def search(data):
@@ -19,7 +19,6 @@ def search(data):
 
         # run HDP and get indices of data in percent
         *_, indices = hpd_grid(data, percent=p)
-        set_trace()
 
         # Calculate accuracy
         acc = get_accuracy(indices)
@@ -66,10 +65,9 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
     Note this was modified to find low-accuracy areas
     """
 
-    set_trace()
     # data points that create a density plot when histogramed
     sample = np.asarray(sample)
-    #sample = sample[~np.isnan(sample)]
+    sample = sample[~np.isnan(sample)]
     if show_plot: px.histogram(
             sample, title='Histogram of Bi-Modal Data', 
             template='simple_white', 
@@ -83,7 +81,7 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
     x = np.linspace(l, u, 2000)
 
     # get kernel density estimate
-    density = kde.gaussian_kde(sample)
+    density = stats.gaussian_kde(sample)
     y = density.evaluate(x)
 
     if show_plot: 
@@ -160,4 +158,13 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
          modes.append(round(x_hpd[np.argmax(y_hpd)], roundto)) 
          # store x-value where density is highest in range
 
-    return hpd, x, y, modes, y_cutoff, np.array(indices).flatten()
+    set_trace()
+    indices = [item for sublist in indices for item in sublist]
+
+    return hpd, x, y, modes, y_cutoff, np.array(indices)
+
+
+
+
+
+

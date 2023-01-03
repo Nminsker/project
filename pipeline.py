@@ -28,13 +28,17 @@ class Pipeline:
 
         """clean and validate data"""
 
+        print('starting data cleaning...')
+
         ## transform non numeric data to categorial numeric data:
         for col in data.dtypes[data.dtypes=='object'].index:
             data[col], _ = data[col].factorize() 
-        
-        ## remove Nons
-        # TODO
+        print(f'data shape before removing Nons: {data.shape}')
 
+        ## remove Nons
+        data = ddat.dropna()
+        print(f'data shape after removing Nons: {data.shape}')
+        
         return data
 
     def model_pipeline(self, model, clean_data, labels):
@@ -64,8 +68,14 @@ class Pipeline:
         print('MSE:',metrics.mean_squared_error(test_labels, preds))
         print('RMSE:',np.sqrt(metrics.mean_squared_error(test_labels, preds)))
 
+        ## run HPD on data to find data slices that our model perform badly on
+        data_slices = search(test_data)
+
         ## train again with feature selection
         #TODO model = self.feature_selection_training(model, clean_data)
+
+        ## wrap the model with interval model
+        #TODO model = 'replace this with something real'
 
         return model
 
