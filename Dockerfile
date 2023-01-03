@@ -19,14 +19,13 @@ RUN chmod -R a+rwx /home/user
 
 USER root
 
-RUN git clone https://github.com/nmslib/nmslib.git .
-RUN cd nmslib
-COPY ptach_file.patch .
-RUN git apply ptach_file.patch
-RUN cd python_bindings
-RUN pip3 install .
-RUN cd ..
-RUN rm -rf nmslib
+RUN mkdir /nmslib
+RUN git clone https://github.com/nmslib/nmslib.git /nmslib
+COPY ./ptach_file.patch /nmslib/
+RUN cd /nmslib/ && git apply ./ptach_file.patch 
+RUN cd /nmslib/similarity_search&& cmake . && make 
+RUN cd /nmslib/python_bindings && pip3 install .
+RUN rm -rf /nmslib
 
 COPY requirements.txt /tmp
 RUN pip3 install -r /tmp/requirements.txt 
