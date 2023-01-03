@@ -12,7 +12,7 @@ class MacestModel:
 
         self.model = model
 
-        self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test,
+        self.X_pp_train, self.X_conf_train, self.X_cal, self.X_test,\
         self.y_pp_train, self.y_conf_train, self.y_cal, self.y_test =\
             self.split_data(X, y)
 

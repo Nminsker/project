@@ -77,7 +77,10 @@ class Pipeline:
         """train the model, and use pipeline methods"""
 
         train_data, test_data, train_labels, test_labels = \
-                train_test_split(clean_data, labels, test_size = 0.3)
+                train_test_split(clean_data, 
+                                 labels, 
+                                 test_size = 0.3, 
+                                 random_state=5)
 
         ## train the model
         model.fit(train_data, train_labels)
@@ -124,7 +127,7 @@ def baseline(data, labels, model):
         data[col], _ = data[col].factorize()
 
     train_data, test_data, train_labels, test_labels = \
-        train_test_split(data, labels, test_size=0.3)
+        train_test_split(data, labels, test_size=0.3, random_state=5)
 
     model.fit(train_data, train_labels)
     preds = model.predict(test_data)
@@ -138,7 +141,7 @@ def set_seed():
 
 if __name__ == "__main__":
 
-    # set_seed()
+    set_seed()
     pipeline = Pipeline()
 
     print("\n*******************************************************")
