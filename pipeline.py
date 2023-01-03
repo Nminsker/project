@@ -14,8 +14,10 @@ import random
 
 class Pipeline:
 
+
     def __init__(self):
         pass
+
 
     def apply(self, data, labels, model):
 
@@ -29,7 +31,9 @@ class Pipeline:
 
         ## train the model
         model = self.model_pipeline(model, clean_data, labels)
+
         return model
+
 
     def clean_data_pipeline(self, data):
 
@@ -48,8 +52,10 @@ class Pipeline:
         
         return data
 
+
     def feature_selection_pipeline(self, data, labels):
         return
+
 
     def SelectKBest_feature_selection_pipeline(self, data, labels):
 
@@ -63,6 +69,7 @@ class Pipeline:
         set_printoptions(precision=3)
         # print(fit.scores_)
         return fit.transform(data)
+
 
     def model_pipeline(self, model, clean_data, labels):
         
@@ -98,6 +105,7 @@ class Pipeline:
 
         return model
 
+
 def print_err(labels, pred, type):
 
     """Print predictions error"""
@@ -105,6 +113,7 @@ def print_err(labels, pred, type):
     # print('MAE:', metrics.mean_absolute_error(labels, pred))
     print(f'{type} MSE:{ metrics.mean_squared_error(labels, pred)}')
     # print('RMSE:', np.sqrt(metrics.mean_squared_error(labels, pred)))
+
 
 def baseline(data, labels, model):
 
@@ -120,6 +129,7 @@ def baseline(data, labels, model):
     model.fit(train_data, train_labels)
     preds = model.predict(test_data)
     print_err(test_labels, preds, "Baseline")
+
 
 def set_seed():
     seed_value = 678

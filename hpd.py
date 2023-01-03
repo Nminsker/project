@@ -41,11 +41,10 @@ def search(data, labels, model):
                 preds_on_sliced_data = model.predict(sliced_data)
                 mse = get_mse(preds_on_sliced_data, sliced_labels)
             
-                # Save if mse increases by 0.1
                 if prior_mse is not None:
 
+                    ## Save if change is more than 10%
                     new_change = 100 * (mse - prior_mse) / prior_mse
-
                     if new_change > 10 and mse > mse_on_full_test_data:
                         print(mse)
                         print(f'(max, min) values of {feature} in full data:' 
@@ -186,9 +185,5 @@ def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
     indices = [item for sublist in indices for item in sublist]
 
     return hpd, x, y, modes, y_cutoff, np.array(indices)
-
-
-
-
 
 
