@@ -28,7 +28,7 @@ class Pipeline:
         ## prepare data for training, cleaning, etc.
         clean_data = self.clean_data_pipeline(data)
 
-        train_data, test_data, train_labels, test_labels = train_test_split(clean_data, labels, test_size = 0.3, random_state=5)
+        train_data, test_data, train_labels, test_labels = train_test_split(clean_data, labels, test_size = 0.3, random_state=6)
 
         ## Perform feature selection
         t_train_data, t_test_data = self.feature_selection_pipeline(model, train_data, train_labels, test_data, test_labels)
@@ -82,7 +82,6 @@ class Pipeline:
         test = SelectKBest(score_func=f_regression, k=num_features)
         fit = test.fit(train_data, train_labels)
         t_train_data = fit.transform(train_data)
-        set_printoptions(precision=3)
 
         model.fit(t_train_data, train_labels)
         t_test_data = fit.transform(test_data)
@@ -90,28 +89,29 @@ class Pipeline:
         # print(fit.scores_)
 
         err = metrics.mean_squared_error(pred, test_labels)
-        print(f"Number of features : {num_features}/ {t_train_data.shape[1]} MSE : {err}")
+        print(f"Number of features : {num_features}/ {train_data.shape[1]} MSE : {err}")
 
-        return t_train_data, t_test_data, err
+        return t_train_data, t_test_data, test.get_feature_names_out(train_data.columns), err
 
     def feature_selection_pipeline(self, model, train_data, train_labels, test_data, test_labels):
 
         """perform feature selection on the data and return the transformed data"""
 
         print("***Running feature selection pipeline***\n")
-        min_err = 0
-        transformed_data_list = []
-        err_list = []
 
+        # Find best number of features
+        res = []
         for k in range(int(len(train_data.columns)/2), len(train_data.columns)+1):
-            t_train_data, t_test_data, err = self.SelectKBest_feature_selection(sklearn.base.clone(model), train_data, train_labels, test_data, test_labels, k)
-            transformed_data_list.append([t_train_data, t_test_data])
-            err_list.append(err)
+            t_train_data, t_test_data, selected_features, err = \
+                self.SelectKBest_feature_selection(sklearn.base.clone(model), train_data, train_labels, test_data, test_labels, k)
+            res.append({'transformed_data': [t_train_data, t_test_data],
+                        'err': err,
+                        'selected_features': selected_features})
 
-        #return the transformed data with the lowest error
-        ret_data =  transformed_data_list[err_list.index(min(err_list))]
+        best = min(res, key=lambda x:x['err'])
+        ret_data = best['transformed_data']
         print("\n***End of feature selection phase***\n")
-        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n Selected features : {ret_data[0][0]} err :{min(err_list)}")
+        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n Selected features : {best['selected_features']} err :{best['err']}")
 
         return ret_data
 
@@ -149,7 +149,7 @@ def baseline(data, labels, model):
         data[col], _ = data[col].factorize()
 
     train_data, test_data, train_labels, test_labels = \
-        train_test_split(data, labels, test_size=0.3, random_state=5)
+        train_test_split(data, labels, test_size=0.3, random_state=6)
 
     model.fit(train_data, train_labels)
     preds = model.predict(test_data)
