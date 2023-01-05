@@ -15,6 +15,7 @@ from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 import sklearn
+import pandas as pd
 
 class Pipeline:
 
@@ -103,8 +104,11 @@ class Pipeline:
         res = []
         for k in range(int(len(train_data.columns)/2), len(train_data.columns)+1):
             t_train_data, t_test_data, selected_features, err = \
-                self.SelectKBest_feature_selection(sklearn.base.clone(model), train_data, train_labels, test_data, test_labels, k)
-            res.append({'transformed_data': [t_train_data, t_test_data],
+                self.SelectKBest_feature_selection(sklearn.base.clone(model), train_data, train_labels,
+                                                   test_data, test_labels, k)
+            t_train_data_df, t_test_data_df = pd.DataFrame(data=t_train_data, columns=selected_features), \
+                                              pd.DataFrame(data=t_test_data, columns=selected_features)
+            res.append({'transformed_data': [t_train_data_df, t_test_data_df],
                         'err': err,
                         'selected_features': selected_features})
 
