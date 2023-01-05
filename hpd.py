@@ -21,7 +21,7 @@ def search(data, labels, model):
     
     # 2. Create prior vars
     prior_indices, prior_mse, prior_p = {}, None, None 
-    out = {}
+    res = {}
 
     preds = model.predict(data)
     mse_on_full_test_data = get_mse(preds, labels)
@@ -34,31 +34,38 @@ def search(data, labels, model):
             *_, indices = hpd_grid(data[feature], percent=p)
 
             # Calculate mse just for the chosen indices
-            if indices.size > 0:
+            if indices.size == 0:
+                continue
 
-                sliced_data = data.iloc[indices]
-                sliced_labels = labels.iloc[indices]
-                preds_on_sliced_data = model.predict(sliced_data)
-                mse = get_mse(preds_on_sliced_data, sliced_labels)
+            sliced_data = data.iloc[indices]
+            sliced_labels = labels.iloc[indices]
+            preds_on_sliced_data = model.predict(sliced_data)
+            mse = get_mse(preds_on_sliced_data, sliced_labels)
+        
+            if prior_mse is not None:
+
+                ## Save if change is more than 10%
+                new_change = 100 * (mse - prior_mse) / prior_mse
+                if new_change > 10 and mse > mse_on_full_test_data:
+                    print(mse)
+
+                    print(f'(max, min) values of {feature} in full data:' 
+                          f'({data[feature].max(), data[feature].min()})')
+
+                    print(f'(max, min) values of {feature} in sliced data:'
+                          f'({sliced_data[feature].max(),' 
+                          f'sliced_data[feature].min()})')
+
+                    res[f'{feature}-{p}-{prior_p}'] =\
+                        (prior_indices - set(indices), mse - prior_mse)
             
-                if prior_mse is not None:
-
-                    ## Save if change is more than 10%
-                    new_change = 100 * (mse - prior_mse) / prior_mse
-                    if new_change > 10 and mse > mse_on_full_test_data:
-                        print(mse)
-                        print(f'(max, min) values of {feature} in full data:' 
-                              f'({data[feature].max(), data[feature].min()})')
-                        print(f'(max, min) values of {feature} in sliced data:'
-                              f'({sliced_data[feature].max(), sliced_data[feature].min()})')
-                        out[f'{feature}-{p}-{prior_p}'] =\
-                            (prior_indices - set(indices), mse - prior_mse)
-                
-                # Reset
-                prior_indices = set(indices)
-                prior_mse = mse
-                prior_p = p
+            # Reset
+            prior_indices = set(indices)
+            prior_mse = mse
+            prior_p = p
       
+    return res
+
 
 def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
 

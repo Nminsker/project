@@ -51,11 +51,11 @@ class Pipeline:
                                                 test_labels)
 
         ## Model pipeline
-        model = self.model_pipeline(model, 
-                                    t_train_data, 
-                                    train_labels
-                                    t_test_data,
-                                    test_labels)
+        model data_slices = self.model_pipeline(model, 
+                                                t_train_data, 
+                                                train_labels
+                                                t_test_data,
+                                                test_labels)
 
         self.predict_and_eval(model, t_test_data, test_labels)
 
@@ -203,7 +203,7 @@ class Pipeline:
         ## wrap the model with interval model
         model = MacestModel(model, train_data, train_labels)  
 
-        return model
+        return model, data_slices
 
 
     def predict_and_eval(self, model, test_data, test_labels):
