@@ -11,6 +11,11 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_regression
 import math
 import random
+from sklearn.feature_selection import RFECV
+from sklearn.model_selection import KFold
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+import sklearn
 
 
 class Pipeline:
@@ -27,11 +32,32 @@ class Pipeline:
         ## prepare data for training, cleaning, etc.
         clean_data = self.clean_data_pipeline(data)
 
-        # transformed_data = self.SelectKBest_feature_selection_pipeline(clean_data, labels)
-        # transformed_data = self.feature_selection_pipeline(clean_data, labels)
+        ## Split data into train and test
+        train_data, test_data, train_labels, test_labels = \
+                train_test_split(clean_data, 
+                                 labels, 
+                                 test_size=0.3, 
+                                 random_state=6)
 
-        ## train the model
-        model = self.model_pipeline(model, clean_data, labels)
+        ## Perform feature selection
+        ## This function returns train and test data
+        ## just with the 'good features' after the 
+        ## feature selection methods
+        t_train_data, t_test_data = \
+                self.feature_selection_pipeline(model, 
+                                                train_data, 
+                                                train_labels, 
+                                                test_data, 
+                                                test_labels)
+
+        ## Model pipeline
+        model = self.model_pipeline(model, 
+                                    t_train_data, 
+                                    train_labels
+                                    t_test_data,
+                                    test_labels)
+
+        self.predict_and_eval(model, t_test_data, test_labels)
 
         return model
 
@@ -54,40 +80,112 @@ class Pipeline:
         return data
 
 
-    def feature_selection_pipeline(self, data, labels):
-        return
+    def RFECV_feature_selection_pipeline(self, model, data, labels):
+        min_features_to_select = 6  # Minimum number of features to consider
+
+        rfecv = RFECV(
+            estimator=RandomForestRegressor(),
+            step=1,
+            scoring="neg_mean_squared_error",
+            min_features_to_select=min_features_to_select,
+            n_jobs=2,
+        )
+
+        select = rfecv.fit(data, labels)
+        mask = select.get_support()
+        features = np.array(data.columns)
+        best_features = features[mask]
+        #plot_feature_selection_results(rfecv, min_features_to_select)
+
+        print(f"Ranking :{rfecv.ranking_}")
+        print(f"Optimal number of features: {rfecv.n_features_}")
+        print(f"Best features: {best_features}")
+
+        return data.filter(best_features)
 
 
-    def SelectKBest_feature_selection_pipeline(self, data, labels):
+    def SelectKBest_feature_selection(self, 
+                                      model,
+                                      train_data,
+                                      train_labels,
+                                      test_data,
+                                      test_labels,
+                                      num_features):
 
-        """perform feature selection on the data"""
+        """perform feature selection on the data using SelectKBest 
+           with f_regression scoring func and k = num_features"""
 
-        # feature extraction
-        k = math.floor(0.8*len(data.columns))
-        print(f"Number of selected features : {k}/ {len(data.columns)}")
-        test = SelectKBest(score_func=f_regression, k=k)
-        fit = test.fit(data, labels)
-        set_printoptions(precision=3)
+        test = SelectKBest(score_func=f_regression, k=num_features)
+        fit = test.fit(train_data, train_labels)
+        t_train_data = fit.transform(train_data)
+
+        model.fit(t_train_data, train_labels)
+        t_test_data = fit.transform(test_data)
+        pred = model.predict(fit.transform(test_data))
         # print(fit.scores_)
-        return fit.transform(data)
+
+        err = metrics.mean_squared_error(pred, test_labels)
+        print(f"Number of features :" 
+              f"{num_features}/ {train_data.shape[1]} MSE : {err}")
+
+        return t_train_data, t_test_data,\
+                   test.get_feature_names_out(train_data.columns), err
 
 
-    def model_pipeline(self, model, clean_data, labels):
+    def feature_selection_pipeline(self,
+                                   model,
+                                   train_data,
+                                   train_labels,
+                                   test_data,
+                                   test_labels):
+
+        """perform feature selection on the data and 
+           return the transformed data"""
+
+        print("***Running feature selection pipeline***\n")
+
+        # Find best number of features
+        res = []
+        start = int(len(train_data.columns)/2)
+        stop = len(train_data.columns) + 1
+        for k in range(start, stop):
+
+            t_train_data, t_test_data, selected_features, err = \
+                self.SelectKBest_feature_selection(
+                        sklearn.base.clone(model), 
+                        train_data, 
+                        train_labels, 
+                        test_data, 
+                        test_labels, 
+                        k)
+
+            res.append({'transformed_data': [t_train_data, t_test_data],
+                        'err': err,
+                        'selected_features': selected_features})
+
+        best = min(res, key=lambda x:x['err'])
+        ret_data = best['transformed_data']
+
+        print("\n***End of feature selection phase***\n")
+
+        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n"
+              f"Selected features : {best['selected_features']} "
+              f"err :{best['err']}")
+
+        return ret_data
+
+
+    def model_pipeline(self,
+                       model,
+                       train_data,
+                       train_labels,
+                       test_data,
+                       test_labels):
         
-        """train the model, and use pipeline methods"""
-
-        train_data, test_data, train_labels, test_labels = \
-                train_test_split(clean_data, 
-                                 labels, 
-                                 test_size = 0.3, 
-                                 random_state=5)
+        """train the model, and use pipeline methods."""
 
         ## train the model
         model.fit(train_data, train_labels)
-
-        # create some predictions on train data (just for sanity)
-        # preds_on_train_data = model.predict(train_data)
-        # print_err(train_labels, preds_on_train_data, "Train")
 
         ## create some predictions on test data
         preds = model.predict(test_data)
@@ -105,8 +203,12 @@ class Pipeline:
         ## wrap the model with interval model
         model = MacestModel(model, train_data, train_labels)  
 
-
         return model
+
+
+    def predict_and_eval(self, model, test_data, test_labels):
+        preds = model.predict(test_data)
+        print_err(test_labels, preds, "Test")
 
 
 def print_err(labels, pred, type):
@@ -114,7 +216,7 @@ def print_err(labels, pred, type):
     """Print predictions error"""
 
     # print('MAE:', metrics.mean_absolute_error(labels, pred))
-    print(f'{type} MSE:{ metrics.mean_squared_error(labels, pred)}')
+    print(f'{type} MSE:{ metrics.mean_squared_error(labels, pred)}\n')
     # print('RMSE:', np.sqrt(metrics.mean_squared_error(labels, pred)))
 
 
@@ -127,11 +229,11 @@ def baseline(data, labels, model):
         data[col], _ = data[col].factorize()
 
     train_data, test_data, train_labels, test_labels = \
-        train_test_split(data, labels, test_size=0.3, random_state=5)
+        train_test_split(data, labels, test_size=0.3, random_state=6)
 
     model.fit(train_data, train_labels)
     preds = model.predict(test_data)
-    print_err(test_labels, preds, "Baseline")
+    print_err(test_labels, preds, "Baseline model")
 
 
 def set_seed():
