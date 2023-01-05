@@ -109,13 +109,12 @@ class Pipeline:
             t_train_data_df, t_test_data_df = pd.DataFrame(data=t_train_data, columns=selected_features), \
                                               pd.DataFrame(data=t_test_data, columns=selected_features)
             res.append({'transformed_data': [t_train_data_df, t_test_data_df],
-                        'err': err,
-                        'selected_features': selected_features})
+                        'err': err})
 
         best = min(res, key=lambda x:x['err'])
         ret_data = best['transformed_data']
         print("\n***End of feature selection phase***\n")
-        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n Selected features : {best['selected_features']} err :{best['err']}")
+        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n Selected features : {ret_data[0].columns} err :{best['err']}")
 
         return ret_data
 
