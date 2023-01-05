@@ -53,8 +53,8 @@ def search(data, labels, model):
                           f'({data[feature].max(), data[feature].min()})')
 
                     print(f'(max, min) values of {feature} in sliced data:'
-                          f'({sliced_data[feature].max(),' 
-                          f'sliced_data[feature].min()})')
+                          f'({sliced_data[feature].max()},' 
+                          f'{sliced_data[feature].min()})')
 
                     res[f'{feature}-{p}-{prior_p}'] =\
                         (prior_indices - set(indices), mse - prior_mse)

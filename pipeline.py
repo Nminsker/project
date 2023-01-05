@@ -51,11 +51,11 @@ class Pipeline:
                                                 test_labels)
 
         ## Model pipeline
-        model data_slices = self.model_pipeline(model, 
-                                                t_train_data, 
-                                                train_labels
-                                                t_test_data,
-                                                test_labels)
+        model, data_slices = self.model_pipeline(model, 
+                                                 t_train_data, 
+                                                 train_labels,
+                                                 t_test_data,
+                                                 test_labels)
 
         self.predict_and_eval(model, t_test_data, test_labels)
 
@@ -75,7 +75,7 @@ class Pipeline:
 
         ## remove Nons
         data = data.dropna()
-        print(f'data shape after removing Nons: {data.shape}')
+        print(f'data shape after removing Nons: {data.shape}\n')
         
         return data
 
