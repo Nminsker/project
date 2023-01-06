@@ -1,70 +1,44 @@
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
-import numpy as np
-import datasets_utils
 import base_models
-from macest_utils import MacestModel
+import datasets_utils
+
 from hpd import search
-from ipdb import set_trace
-from numpy import set_printoptions
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import f_regression
-import math
+from macest_utils import MacestModel
+import numpy as np
+
+import pandas as pd
 import random
-from sklearn.feature_selection import RFECV
-from sklearn.model_selection import KFold
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
-import sklearn
+from sklearn import metrics
+import sklearn.base as sklearn_base
+from sklearn.feature_selection import f_regression, SelectKBest
+from sklearn.model_selection import train_test_split
 
 
 class Pipeline:
-
-
-    def __init__(self):
-        pass
-
+    """ Fuctionality for building and running the pipeine """
 
     def apply(self, data, labels, model):
-
         """this function returns trained model after pipeline"""
 
         ## prepare data for training, cleaning, etc.
-        clean_data = self.clean_data_pipeline(data)
+        self.clean_data_pipeline(data)
 
         ## Split data into train and test
-        train_data, test_data, train_labels, test_labels = \
-                train_test_split(clean_data, 
-                                 labels, 
-                                 test_size=0.3, 
-                                 random_state=6)
+        train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.3, random_state=6)
 
         ## Perform feature selection
-        ## This function returns train and test data
-        ## just with the 'good features' after the 
-        ## feature selection methods
-        t_train_data, t_test_data = \
-                self.feature_selection_pipeline(model, 
-                                                train_data, 
-                                                train_labels, 
-                                                test_data, 
-                                                test_labels)
+        ## This function returns train and test data data frames
+        ## just with the 'good features' after the feature selection methods
+        t_train_data, t_test_data = self.feature_selection_pipeline(model, train_data, train_labels, test_data, test_labels)
 
         ## Model pipeline
-        model, data_slices = self.model_pipeline(model, 
-                                                 t_train_data, 
-                                                 train_labels,
-                                                 t_test_data,
-                                                 test_labels)
+        model, data_slices = self.model_pipeline(model, t_train_data, train_labels, t_test_data, test_labels)
 
         self.predict_and_eval(model, t_test_data, test_labels)
 
         return model
 
-
     def clean_data_pipeline(self, data):
-
-        """clean and validate data"""
+        """clean and validate data - work is done in place!"""
 
         print('starting data cleaning...')
 
@@ -74,46 +48,11 @@ class Pipeline:
         print(f'data shape before removing Nons: {data.shape}')
 
         ## remove Nons
-        data = data.dropna()
+        data.dropna(inplace=True)
         print(f'data shape after removing Nons: {data.shape}\n')
-        
-        return data
 
-
-    def RFECV_feature_selection_pipeline(self, model, data, labels):
-        min_features_to_select = 6  # Minimum number of features to consider
-
-        rfecv = RFECV(
-            estimator=RandomForestRegressor(),
-            step=1,
-            scoring="neg_mean_squared_error",
-            min_features_to_select=min_features_to_select,
-            n_jobs=2,
-        )
-
-        select = rfecv.fit(data, labels)
-        mask = select.get_support()
-        features = np.array(data.columns)
-        best_features = features[mask]
-        #plot_feature_selection_results(rfecv, min_features_to_select)
-
-        print(f"Ranking :{rfecv.ranking_}")
-        print(f"Optimal number of features: {rfecv.n_features_}")
-        print(f"Best features: {best_features}")
-
-        return data.filter(best_features)
-
-
-    def SelectKBest_feature_selection(self, 
-                                      model,
-                                      train_data,
-                                      train_labels,
-                                      test_data,
-                                      test_labels,
-                                      num_features):
-
-        """perform feature selection on the data using SelectKBest 
-           with f_regression scoring func and k = num_features"""
+    def SelectKBest_feature_selection(self, model, train_data, train_labels, test_data, test_labels, num_features):
+        """ Preform feature selection on the data using SelectKBest with f_regression scoring func and k = num_features"""
 
         test = SelectKBest(score_func=f_regression, k=num_features)
         fit = test.fit(train_data, train_labels)
@@ -128,19 +67,14 @@ class Pipeline:
         print(f"Number of features :" 
               f"{num_features}/ {train_data.shape[1]} MSE : {err}")
 
-        return t_train_data, t_test_data,\
-                   test.get_feature_names_out(train_data.columns), err
+        # MACest makes us use sklearn 0.22.1 which doesn't have the function get_feature_names_out
+        # To work around that just do as the source code of 1.0.* does
+        featureNames = np.array(train_data.columns)[test.get_support()]
 
+        return t_train_data, t_test_data, featureNames, err
 
-    def feature_selection_pipeline(self,
-                                   model,
-                                   train_data,
-                                   train_labels,
-                                   test_data,
-                                   test_labels):
-
-        """perform feature selection on the data and 
-           return the transformed data"""
+    def feature_selection_pipeline(self, model, train_data, train_labels,test_data, test_labels):
+        """ Preform feature selection on the data and return the transformed data"""
 
         print("***Running feature selection pipeline***\n")
 
@@ -149,19 +83,11 @@ class Pipeline:
         start = int(len(train_data.columns)/2)
         stop = len(train_data.columns) + 1
         for k in range(start, stop):
+            t_train_data, t_test_data, selected_features, err = self.SelectKBest_feature_selection(sklearn_base.clone(model), train_data, train_labels, test_data, test_labels, k)
+            test_train_dfs = (pd.DataFrame.from_records(t_train_data, columns=selected_features), 
+                              pd.DataFrame.from_records(t_test_data, columns=selected_features))
 
-            t_train_data, t_test_data, selected_features, err = \
-                self.SelectKBest_feature_selection(
-                        sklearn.base.clone(model), 
-                        train_data, 
-                        train_labels, 
-                        test_data, 
-                        test_labels, 
-                        k)
-
-            res.append({'transformed_data': [t_train_data, t_test_data],
-                        'err': err,
-                        'selected_features': selected_features})
+            res.append({'transformed_data': test_train_dfs, 'err': err})
 
         best = min(res, key=lambda x:x['err'])
         ret_data = best['transformed_data']
@@ -169,19 +95,13 @@ class Pipeline:
         print("\n***End of feature selection phase***\n")
 
         print(f"Num of selected features ===> {ret_data[0].shape[1]} \n"
-              f"Selected features : {best['selected_features']} "
+              f"Selected features : {list(ret_data[0].columns)} "
               f"err :{best['err']}")
 
         return ret_data
 
 
-    def model_pipeline(self,
-                       model,
-                       train_data,
-                       train_labels,
-                       test_data,
-                       test_labels):
-        
+    def model_pipeline(self, model, train_data, train_labels, test_data, test_labels):     
         """train the model, and use pipeline methods."""
 
         ## train the model
@@ -221,15 +141,13 @@ def print_err(labels, pred, type):
 
 
 def baseline(data, labels, model):
-
     """train the baseline model, and print results"""
 
     ## transform non numeric data to categorial numeric data:
     for col in data.dtypes[data.dtypes == 'object'].index:
         data[col], _ = data[col].factorize()
 
-    train_data, test_data, train_labels, test_labels = \
-        train_test_split(data, labels, test_size=0.3, random_state=6)
+    train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.3, random_state=6)
 
     model.fit(train_data, train_labels)
     preds = model.predict(test_data)
@@ -241,8 +159,8 @@ def set_seed():
     random.seed(seed_value)
     np.random.seed(seed_value)
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     set_seed()
     pipeline = Pipeline()
 
@@ -251,20 +169,16 @@ if __name__ == "__main__":
     print("*******************************************************\n")
 
     data_motor, labels_motor = datasets_utils.loadFrenchMotorData()
-    baseline(data_motor, labels_motor, base_models.frenchBaseModel())
-    trained_model_motor = pipeline.apply(data_motor, 
-                                         labels_motor, 
-                                         base_models.frenchBaseModel())
+    baseline(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
+    trained_model_motor = pipeline.apply(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
 
     print("\n*******************************************************")
     print("******************* Boston Data ***********************")
     print("*******************************************************\n")
 
     data_boston, labels_boston = datasets_utils.loadBostonData()
-    baseline(data_boston, labels_boston, base_models.bostonBaseModel())
-    trained_model_boston = pipeline.apply(data_boston, 
-                                          labels_boston, 
-                                          base_models.bostonBaseModel())
+    baseline(data_boston.copy(), labels_boston.copy(), base_models.bostonBaseModel())
+    trained_model_boston = pipeline.apply(data_boston.copy(), labels_boston.copy(), base_models.bostonBaseModel())
 
 
 

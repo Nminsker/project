@@ -27,12 +27,9 @@ def search(data, labels, model):
     mse_on_full_test_data = get_mse(preds, labels)
 
     for feature in data.columns:
-
         for p in percents:
-
             # run HDP and get indices of data in percent
             *_, indices = hpd_grid(data[feature], percent=p)
-
             # Calculate mse just for the chosen indices
             if indices.size == 0:
                 continue
@@ -43,7 +40,6 @@ def search(data, labels, model):
             mse = get_mse(preds_on_sliced_data, sliced_labels)
         
             if prior_mse is not None:
-
                 ## Save if change is more than 10%
                 new_change = 100 * (mse - prior_mse) / prior_mse
                 if new_change > 10 and mse > mse_on_full_test_data:
@@ -68,7 +64,6 @@ def search(data, labels, model):
 
 
 def hpd_grid(sample, alpha=0.05, roundto=2, percent=0.5, show_plot=False):
-
     """Calculate highest posterior density (HPD) of array for given alpha.
     The HPD is the minimum width Bayesian credible interval (BCI).
     The function works for multimodal distributions, 
