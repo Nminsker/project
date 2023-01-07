@@ -67,7 +67,7 @@ class Pipeline:
 
         err = metrics.mean_squared_error(pred, test_labels)
         print(f"Number of features :" 
-              f"{num_features}/ {train_data.shape[1]} MSE : {err}")
+              f"{num_features}/ {train_data.shape[1]} VAL MSE : {err}")
 
         # MACest makes us use sklearn 0.22.1 which doesn't have the function get_feature_names_out
         # To work around that just do as the source code of 1.0.* does
@@ -98,7 +98,7 @@ class Pipeline:
         print("\n***End of feature selection phase***\n")
         print(f"Num of selected features ===> {len(best['selected_features'])} \n"
               f"Selected features : {best['selected_features']} "
-              f"Validation MSE :{best['err']}")
+              f"VAL MSE :{best['err']}")
 
         return best['selected_features']
 
