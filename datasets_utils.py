@@ -26,6 +26,7 @@ def loadFrenchMotorData():
     return df.drop("ClaimNb", axis=1), df["ClaimNb"]/df["Exposure"]
 
 
+
 def loadBostonData():
     """ Returns a tuple of DataFrames for ``Boston House Pricing` dataset: (featuresDf, targetArray).
         the targetArray is the "MEDV" for each sample. """
