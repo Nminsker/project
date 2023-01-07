@@ -41,7 +41,7 @@ class MacestModel:
 
 
     def calibrate_macest(self):
-
+    
         self.model.fit(self.X_pp_train, self.y_pp_train)
         model_preds = self.model.predict(self.X_conf_train)
         test_error = np.array(abs(model_preds - self.y_conf_train))
