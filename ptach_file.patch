@@ -1,0 +1,26 @@
+diff --git a/python_bindings/setup.py b/python_bindings/setup.py
+index 0546944..6fb4046 100755
+--- a/python_bindings/setup.py
++++ b/python_bindings/setup.py
+@@ -134,7 +134,7 @@ class BuildExt(build_ext):
+             c_opts['unix'].remove('-march=native')
+             # thanks to @https://github.com/drkeoni
+             # https://github.com/nmslib/nmslib/issues/476#issuecomment-876094529
+-            c_opts['unix'].append('-mcpu=apple-a14')
++            c_opts['unix'].append('-march=armv8-a')
+         c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+         link_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+     else:
+diff --git a/similarity_search/CMakeLists.txt b/similarity_search/CMakeLists.txt
+index 7f7169e..e1378fc 100644
+--- a/similarity_search/CMakeLists.txt
++++ b/similarity_search/CMakeLists.txt
+@@ -35,7 +35,7 @@ if(NOT WIN32)
+ endif()
+ #message(FATAL_ERROR "stopping... compiler version is: ${CMAKE_CXX_COMPILER_ID} ${CXX_COMPILER_VERSION}")
+ 
+-set(SIMD_FLAGS " -march=native")
++set(SIMD_FLAGS " -march=armv8-a")
+ #set(SIMD_FLAGS "-march=x86-64")
+ #set(SIMD_FLAGS "-march=core2")
+ #set(SIMD_FLAGS "-fpic -msse4.2")
