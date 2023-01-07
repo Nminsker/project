@@ -28,12 +28,15 @@ class Pipeline:
         ## Perform feature selection
         ## This function returns train and test data data frames
         ## just with the 'good features' after the feature selection methods
-        t_train_data, t_test_data = self.feature_selection_pipeline(model, train_data, train_labels, test_data, test_labels)
+        selected_features = self.feature_selection_pipeline(model, train_data, train_labels)
+
+        transformed_train_data = train_data[selected_features]
+        transformed_test_data = test_data[selected_features]
 
         ## Model pipeline
-        model, data_slices = self.model_pipeline(model, t_train_data, train_labels, t_test_data, test_labels)
+        model, data_slices = self.model_pipeline(model, transformed_train_data, train_labels, transformed_test_data, test_labels)
 
-        self.predict_and_eval(model, t_test_data, test_labels)
+        self.predict_and_eval(model, test_data, test_labels)
 
         return model
 
@@ -55,11 +58,10 @@ class Pipeline:
         """ Preform feature selection on the data using SelectKBest with f_regression scoring func and k = num_features"""
 
         test = SelectKBest(score_func=f_regression, k=num_features)
-        fit = test.fit(train_data, train_labels)
-        t_train_data = fit.transform(train_data)
 
-        model.fit(t_train_data, train_labels)
-        t_test_data = fit.transform(test_data)
+        fit = test.fit(train_data, train_labels)
+
+        model.fit(fit.transform(train_data), train_labels)
         pred = model.predict(fit.transform(test_data))
         # print(fit.scores_)
 
@@ -71,34 +73,34 @@ class Pipeline:
         # To work around that just do as the source code of 1.0.* does
         featureNames = np.array(train_data.columns)[test.get_support()]
 
-        return t_train_data, t_test_data, featureNames, err
+        return featureNames, err
 
-    def feature_selection_pipeline(self, model, train_data, train_labels,test_data, test_labels):
+    def feature_selection_pipeline(self, model, data, labels):
         """ Preform feature selection on the data and return the transformed data"""
 
         print("***Running feature selection pipeline***\n")
 
         # Find best number of features
         res = []
-        start = int(len(train_data.columns)/2)
-        stop = len(train_data.columns) + 1
-        for k in range(start, stop):
-            t_train_data, t_test_data, selected_features, err = self.SelectKBest_feature_selection(sklearn_base.clone(model), train_data, train_labels, test_data, test_labels, k)
-            test_train_dfs = (pd.DataFrame.from_records(t_train_data, columns=selected_features), 
-                              pd.DataFrame.from_records(t_test_data, columns=selected_features))
+        start = int(len(data.columns)/2)
+        stop = len(data.columns) + 1
 
-            res.append({'transformed_data': test_train_dfs, 'err': err})
+        train_data, val_data, train_labels, val_labels = train_test_split(data, labels, test_size=0.3, random_state=6)
+
+        for k in range(start, stop):
+            selected_features, err = self.SelectKBest_feature_selection(sklearn_base.clone(model), train_data,
+                                                                        train_labels, val_data, val_labels, k)
+
+            res.append({'selected_features': selected_features, 'err': err})
 
         best = min(res, key=lambda x:x['err'])
-        ret_data = best['transformed_data']
 
         print("\n***End of feature selection phase***\n")
+        print(f"Num of selected features ===> {len(best['selected_features'])} \n"
+              f"Selected features : {best['selected_features']} "
+              f"Validation MSE :{best['err']}")
 
-        print(f"Num of selected features ===> {ret_data[0].shape[1]} \n"
-              f"Selected features : {list(ret_data[0].columns)} "
-              f"err :{best['err']}")
-
-        return ret_data
+        return best['selected_features']
 
 
     def model_pipeline(self, model, train_data, train_labels, test_data, test_labels):     
