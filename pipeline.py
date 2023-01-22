@@ -23,12 +23,15 @@ class Pipeline:
         self.clean_data_pipeline(data)
 
         ## Split data into train and test
-        train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.3, random_state=6)
+        train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.3, random_state=8)
 
         ## Perform feature selection
         ## This function returns train and test data data frames
         ## just with the 'good features' after the feature selection methods
         selected_features = self.feature_selection_pipeline(model, train_data, train_labels)
+        all_features = train_data.columns
+        print(f'All features: {all_features.values}')
+        print(f'Dropped features: {[i for i in all_features.values if i not in selected_features]}')
 
         transformed_train_data = train_data[selected_features]
         transformed_test_data = test_data[selected_features]
@@ -36,7 +39,7 @@ class Pipeline:
         ## Model pipeline
         model, data_slices = self.model_pipeline(model, transformed_train_data, train_labels, transformed_test_data, test_labels)
 
-        self.predict_and_eval(model, test_data, test_labels)
+        #self.predict_and_eval(model, transformed_test_data, test_labels)
 
         return model
 
@@ -85,7 +88,7 @@ class Pipeline:
         start = int(len(data.columns)/2)
         stop = len(data.columns) + 1
 
-        train_data, val_data, train_labels, val_labels = train_test_split(data, labels, test_size=0.3, random_state=6)
+        train_data, val_data, train_labels, val_labels = train_test_split(data, labels, test_size=0.3, random_state=8)
 
         for k in range(start, stop):
             selected_features, err = self.SelectKBest_feature_selection(sklearn_base.clone(model), train_data,
@@ -116,11 +119,14 @@ class Pipeline:
         print_err(test_labels, preds, "Test")
 
         ## run HPD on data to find data slices that our model perform badly on
-        test_data.reset_index(inplace=True)
-        test_data.drop('index', axis=1, inplace=True)
+        print("***Running HPD pipeline***\n")
+        test_data = test_data.reset_index()
+        test_data = test_data.drop('index', axis=1)
         test_labels = test_labels.reset_index()
-        test_labels.drop('index', axis=1, inplace=True)
+        test_labels = test_labels.drop('index', axis=1)
         data_slices = search(test_data, test_labels, model)
+
+        print("\n***End of HPD phase***\n")
 
         ## wrap the model with interval model
         model = MacestModel(model, train_data, train_labels)  
@@ -166,13 +172,13 @@ if __name__ == "__main__":
     set_seed()
     pipeline = Pipeline()
 
-    print("\n*******************************************************")
-    print("******************* French Motor Data *****************")
-    print("*******************************************************\n")
+    #print("\n*******************************************************")
+    #print("******************* French Motor Data *****************")
+    #print("*******************************************************\n")
 
-    data_motor, labels_motor = datasets_utils.loadFrenchMotorData()
-    baseline(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
-    trained_model_motor = pipeline.apply(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
+    #data_motor, labels_motor = datasets_utils.loadFrenchMotorData()
+    #baseline(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
+    #trained_model_motor = pipeline.apply(data_motor.copy(), labels_motor.copy(), base_models.frenchBaseModel())
 
     print("\n*******************************************************")
     print("******************* Boston Data ***********************")
